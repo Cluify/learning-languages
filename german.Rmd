@@ -1,3 +1,9 @@
+---
+title: "Learning German al la Zipf"
+output: github_document
+---
+
+```{bash}
 #!/bin/bash
 
 cat ~/friends/* ~/himym/* |
@@ -19,3 +25,4 @@ cat all_data.csv |head -1000 > 1000.csv
 cat all_data.csv |head -1000 |awk '{sum += $1} END {print sum}'
 
 cat all_data.csv |awk '{sum += $1} END {print sum}'
+```
