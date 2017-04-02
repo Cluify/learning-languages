@@ -6,7 +6,8 @@ output: github_document
 ```{bash}
 #!/bin/bash
 
-cat ~/friends/* ~/himym/* |
+find data/t* -name *.srt -print0 |
+xargs -0 cat |
 grep -v '^[0-9]' |
 gsed 's/[?!.|]/ /g' |
 gsed 's/ * / /g' |
@@ -22,7 +23,4 @@ gsed -e 's/^[ \t]*//;s/ /,/' > all_data.csv
 
 cat all_data.csv |head -1000 > 1000.csv
 
-cat all_data.csv |head -1000 |awk '{sum += $1} END {print sum}'
 
-cat all_data.csv |awk '{sum += $1} END {print sum}'
-```
