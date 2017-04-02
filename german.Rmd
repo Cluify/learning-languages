@@ -8,17 +8,17 @@ output: github_document
 
 cat ~/friends/* ~/himym/* |
 grep -v '^[0-9]' |
-sed 's/[?!.|]/ /g' |
-sed 's/ * / /g' |
-sed "s/[^A-Za-z\' ]//g" |
-sed 's/^ //g' |
-sed 's/ /\n/g' |
-sed '/^$/d' |
-sed -e 's/\(.*\)/\L\1/' |
-sort |
-uniq -c |
-sort -rn |
-sed -e 's/^[ \t]*//' > all_data.csv
+gsed 's/[?!.|]/ /g' |
+gsed 's/ * / /g' |
+gsed "s/[^A-Za-z\' ]//g" |
+gsed 's/^ //g' |
+gsed 's/ /\n/g' |
+gsed '/^$/d' |
+gsed -e 's/\(.*\)/\L\1/' |
+LC_ALL='C' sort |
+LC_ALL='C' uniq -c |
+LC_ALL='C' sort -rn |
+gsed -e 's/^[ \t]*//;s/ /,/' > all_data.csv
 
 cat all_data.csv |head -1000 > 1000.csv
 
