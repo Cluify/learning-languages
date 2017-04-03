@@ -92,6 +92,8 @@ wordcloud(german$word, sqrt(german$count),
           fixed.asp = FALSE)
 ```
 
+You can view the full list with (not necessarily correct!) english translations [here](translated_list.csv).
+
 ```{r export}
 fwrite(german[count!=0][1:1000], "top_1000_german_words.csv")
 ```

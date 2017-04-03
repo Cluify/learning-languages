@@ -14,3 +14,5 @@ We can test if a discrete power law (Zipf) fits the data well. The red line show
 <img src="german_files/figure-markdown_github/power_law-1.png" width="960" />
 
 And what text analysis would be complete without a word cloud, here of the top 1,000 most frequent words. <img src="german_files/figure-markdown_github/wordcloud-1.png" width="960" />
+
+You can view the full list with (not necessarily correct!) english translations [here](translated_list.csv).
