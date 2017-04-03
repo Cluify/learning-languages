@@ -1,9 +1,21 @@
 ---
-title: "Learning German al la Zipf"
+title: "Learning German with Zipf's Law"
 output: github_document
 ---
+```{r load_librarys, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(echo=FALSE, fig.width=10, fig.asp=1/1.5, fig.retina=2, message=FALSE, warning=FALSE)
+library(data.table, quietly = TRUE)
+library(ggplot2)
+library(poweRlaw)
+library(wordcloud)
+```
 
-```{bash}
+Learning a new language can be a daunting task. However, the word frequencies in many languages follow Zipf's law in that the most frequent word occurs twice as often as the second most frequent, and three times as often as the third, and so on. This means that a relatively small number of words make up the majority of the spoken and written corpus. So you only need to learn 1000 or so words to understand ~85% of common speech and writing.
+
+Here I use subtitles from the TV series Friends to create a list of most frequent German words. Code for this analysis can be found in the [.Rmd file](german.Rmd). First, with code modified slightly from [Tomi Mester](https://hackernoon.com/learning-languages-very-quickly-with-the-help-of-some-very-basic-data-science-cdbf95288333), I convert the subtitle files into a ranked list of words with their word count.
+
+```{bash pre_processing}
 #!/bin/bash
 
 find data/t* -name *.srt -print0 |
@@ -19,8 +31,67 @@ gsed -e 's/\(.*\)/\L\1/' |
 LC_ALL='C' sort |
 LC_ALL='C' uniq -c |
 LC_ALL='C' sort -rn |
-gsed -e 's/^[ \t]*//;s/ /,/' > all_data.csv
+gsed -e 's/^[ \t]*//;s/ /,/' > data/data.csv
+```
 
-cat all_data.csv |head -1000 > 1000.csv
+Then we can plot cumulative frequency for the top N words. We can see that you would only have to learn the 500 most frequent words to understand ~77% of all words, 1,000 for ~84%, and 2,000 gets you to almost 90%.
 
+```{r cumulative_percentage, fig.width=10}
 
+german <- fread("data/data.csv", encoding = "Latin-1") # need the encoding for the characters: ß, ü etc.
+setnames(german, c("count","word"))
+
+# remove names etc.
+german <- german[! word %in% c("ross","phoebe","rachel","monica","chandler","emma","joey","o","i","k","mike","carol","janice","richard","irossi","charlie","ichandleri","ijoeyi","barry","pete","iphoebei","david","paul","joe","gunther","frank","ralph","e","jack")]
+
+invisible(german[, rank := 1:nrow(german)])
+
+german <- rbind(data.table(count=0, word="", rank=0), german) # so the graph starts at 0
+
+invisible(german[, cumulative_fraction := signif(cumsum(count) / sum(count), 4)] )
+
+ggplot(german, aes(rank, cumulative_fraction)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::percent, breaks = seq(0, 1, 0.1)) +
+  xlim(0, 2000) +
+  xlab("Top N words") +
+  ylab("Percentage of all words")
+```
+
+```{r fit_power_law, echo=FALSE, include=FALSE}
+# Fit a power law distribution
+m_pl = displ$new(german[count!=0]$count)
+est = estimate_xmin(m_pl)
+m_pl$setXmin(est)
+
+toplot <- plot(m_pl)
+fitted_powerlaw <- lines(m_pl)
+```
+
+We can test if a discrete power law (Zipf) fits the data well. The red line shows the fitted power law with $\alpha =$ `r round(m_pl$pars,1)`
+
+```{r power_law, fig.width=10}
+ggplot(toplot, aes(x, y)) +
+  geom_point() +
+  geom_line(data = fitted_powerlaw, colour = "red") +
+  scale_x_log10(breaks = c(1,10,100,1000,10000)) +
+  scale_y_log10(breaks = c(1,0.1,0.01,0.001,0.0001)) +
+  xlab("Frequency") + ylab("Cumulative Distribution Function") +
+  ggtitle("Power law fitted to word frequency")
+
+```
+
+And what text analysis would be complete without a word cloud, here of the top 1,000 most frequent words.
+```{r wordcloud, fig.width=10}
+wordcloud(german$word, sqrt(german$count),
+          max.words = 1000,
+          scale = c(2, 0.8),
+          colors = brewer.pal(8, "Dark2"),
+          random.order = FALSE,
+          rot.per = 0,
+          fixed.asp = FALSE)
+```
+
+```{r export}
+fwrite(german[count!=0][1:1000], "top_1000_german_words.csv")
+```
