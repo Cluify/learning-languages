@@ -42,7 +42,7 @@ german <- fread("data/data.csv", encoding = "Latin-1") # need the encoding for t
 setnames(german, c("count","word"))
 
 # remove names etc.
-german <- german[! word %in% c("ross","phoebe","rachel","monica","chandler","emma","joey","o","i","k","mike","carol","janice","richard","irossi","charlie","ichandleri","ijoeyi","barry","pete","iphoebei","david","paul","joe","gunther","frank","ralph","e","jack")]
+german <- german[! word %in% c("ross","phoebe","rachel","monica","chandler","emma","joey","o","i","k","mike","carol","janice","richard","irossi","charlie","ichandleri","ijoeyi","barry","pete","iphoebei","david","paul","joe","gunther","frank","ralph","e","jack","iracheli","imonicai","tribbiani","sdi","gelulasdi","sdi","mona","tulsa","monicas","lauren","iuntertiteli","julie","marcel","susan")]
 
 invisible(german[, rank := 1:nrow(german)])
 
