@@ -7,13 +7,13 @@ Here I use subtitles in English, German, French, Spanish, and Russian to explore
 
 By plotting the cumulative frequency for the top N words we can see that you would only have to learn the 500 most frequent words to understand ~75% of all words, 1,000 for ~80%, and 2,000 gets you to ~85% (depending on the language).
 
-<img src="german_files/figure-markdown_github/cumulative_percentage-1.png" width="960" />
+<img src="word_frequency_files/figure-markdown_github/cumulative_percentage-1.png" width="960" />
 
 We can test if a discrete power law (Zipf) fits the data well (for English). The red line shows the fitted power law with *α*= 1.6
 
 <img src="german_files/figure-markdown_github/power_law-1.png" width="960" />
 
-And what text analysis would be complete without a word cloud, here of the top 1,000 most frequent words. <img src="german_files/figure-markdown_github/wordcloud-1.png" width="960" /><img src="german_files/figure-markdown_github/wordcloud-2.png" width="960" /><img src="german_files/figure-markdown_github/wordcloud-3.png" width="960" /><img src="german_files/figure-markdown_github/wordcloud-4.png" width="960" /><img src="german_files/figure-markdown_github/wordcloud-5.png" width="960" />
+And what text analysis would be complete without a word cloud, here of the top 1,000 most frequent words. <img src="word_frequency_files/figure-markdown_github/wordcloud-1.png" width="960" /><img src="word_frequency_files/figure-markdown_github/wordcloud-2.png" width="960" /><img src="word_frequency_files/figure-markdown_github/wordcloud-3.png" width="960" /><img src="word_frequency_files/figure-markdown_github/wordcloud-4.png" width="960" /><img src="word_frequency_files/figure-markdown_github/wordcloud-5.png" width="960" />
 
 ### Caveats
 
