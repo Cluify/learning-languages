@@ -1,5 +1,5 @@
 ---
-title: "Learning German with Zipf's Law"
+title: "Learning Languages with Zipf's Law"
 output: github_document
 ---
 ```{r load_librarys, echo=FALSE, message=FALSE, warning=FALSE}
@@ -11,47 +11,34 @@ library(poweRlaw)
 library(wordcloud)
 ```
 
-Learning a new language can be a daunting task. However, the word frequencies in many languages follow Zipf's law in that the most frequent word occurs twice as often as the second most frequent, and three times as often as the third, and so on. This means that a relatively small number of words make up the majority of the spoken and written corpus. So you only need to learn 1000 or so words to understand ~85% of common speech and writing.
+Learning a new language can be a daunting task. However, the word frequencies in many languages follow [Zipf's law](https://en.wikipedia.org/wiki/Zipf%27s_law) in that the most frequent word occurs twice as often as the second most frequent, and three times as often as the third, and so on. This means that a relatively small number of words make up the majority of the spoken and written corpus. So you only need to learn 500 or so words to understand ~75% of the words in common speech.
 
-Here I use subtitles from the TV series Friends to create a list of most frequent German words. Code for this analysis can be found in the [.Rmd file](german.Rmd). First, with code modified slightly from [Tomi Mester](https://hackernoon.com/learning-languages-very-quickly-with-the-help-of-some-very-basic-data-science-cdbf95288333), I convert the subtitle files into a ranked list of words with their word count.
+Here I use subtitles in English, German, French, Spanish, and Russian to explore this. The subtitles are from [opensubtitles.org](https://www.opensubtitles.org), provided by [Hermit Dave](https://github.com/hermitdave/FrequencyWords) as ranked lists of words with their word count. Code for this analysis can be found in the [.Rmd file](german.Rmd). This project is an expansion of work by [Tomi Mester](https://hackernoon.com/learning-languages-very-quickly-with-the-help-of-some-very-basic-data-science-cdbf95288333).
 
-```{bash pre_processing}
-#!/bin/bash
-
-find data/t* -name *.srt -print0 |
-xargs -0 cat |
-grep -v '^[0-9]' |
-gsed 's/[?!.|]/ /g' |
-gsed 's/ * / /g' |
-gsed "s/[^A-Za-z\' ]//g" |
-gsed 's/^ //g' |
-gsed 's/ /\n/g' |
-gsed '/^$/d' |
-gsed -e 's/\(.*\)/\L\1/' |
-LC_ALL='C' sort |
-LC_ALL='C' uniq -c |
-LC_ALL='C' sort -rn |
-gsed -e 's/^[ \t]*//;s/ /,/' > data/data.csv
-```
-
-Then we can plot cumulative frequency for the top N words. We can see that you would only have to learn the 500 most frequent words to understand ~77% of all words, 1,000 for ~84%, and 2,000 gets you to almost 90%.
+By plotting the cumulative frequency for the top N words we can see that you would only have to learn the 500 most frequent words to understand ~75% of all words, 1,000 for ~80%, and 2,000 gets you to ~85% (depending on the language).
 
 ```{r cumulative_percentage, fig.width=10}
+languages <- c("en","de","es","ru","fr")
+words <- data.table(word=character(), count=integer(), language=factor(levels=languages))
 
-german <- fread("data/data.csv", encoding = "Latin-1") # need the encoding for the characters: ß, ü etc.
-setnames(german, c("count","word"))
+for (language in languages){
+words_temp <- fread(paste0("https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2016/",language,"/",language,"_50k.txt"))[1:30000]
+setnames(words_temp, c("word","count"))
+words_temp$language <- language
+words <- rbind(words, words_temp)
+}
 
-# remove names etc.
-german <- german[! word %in% c("ross","phoebe","rachel","monica","chandler","emma","joey","o","i","k","mike","carol","janice","richard","irossi","charlie","ichandleri","ijoeyi","barry","pete","iphoebei","david","paul","joe","gunther","frank","ralph","e","jack","iracheli","imonicai","tribbiani","sdi","gelulasdi","sdi","mona","tulsa","monicas","lauren","iuntertiteli","julie","marcel","susan")]
+invisible(words[, rank := 1:.N, by=language])
 
-invisible(german[, rank := 1:nrow(german)])
+words <- rbind(data.table(count=c(0,0,0,0,0), word=c("","","","",""), rank=c(0,0,0,0,0), language=languages), words) # so the graph starts at 0
 
-german <- rbind(data.table(count=0, word="", rank=0), german) # so the graph starts at 0
+invisible(words[, cumulative_fraction := signif(cumsum(count) / sum(count), 4), by=language] )
 
-invisible(german[, cumulative_fraction := signif(cumsum(count) / sum(count), 4)] )
+levels(words$language) <- c("English", "German", "Spanish", "Russian", "French")
 
-ggplot(german, aes(rank, cumulative_fraction)) +
+ggplot(words, aes(rank, cumulative_fraction, colour=language)) +
   geom_line() +
+  scale_color_brewer(palette="Set1") +
   scale_y_continuous(labels = scales::percent, breaks = seq(0, 1, 0.1)) +
   xlim(0, 2000) +
   xlab("Top N words") +
@@ -60,40 +47,45 @@ ggplot(german, aes(rank, cumulative_fraction)) +
 
 ```{r fit_power_law, echo=FALSE, include=FALSE}
 # Fit a power law distribution
-m_pl = displ$new(german[count!=0]$count)
-est = estimate_xmin(m_pl)
-m_pl$setXmin(est)
+powerlaw_fit = displ$new(words[language=="English" & count!=0]$count)
+est = estimate_xmin(powerlaw_fit)
+powerlaw_fit$setXmin(est)
 
-toplot <- plot(m_pl)
-fitted_powerlaw <- lines(m_pl)
+toplot <- plot(powerlaw_fit)
+fitted_powerlaw <- lines(powerlaw_fit)
 ```
 
-We can test if a discrete power law (Zipf) fits the data well. The red line shows the fitted power law with $\alpha =$ `r round(m_pl$pars,1)`
+We can test if a discrete power law (Zipf) fits the data well (for English). The red line shows the fitted power law with $\alpha =$ `r round(powerlaw_fit$pars,1)`
 
 ```{r power_law, fig.width=10}
 ggplot(toplot, aes(x, y)) +
   geom_point() +
   geom_line(data = fitted_powerlaw, colour = "red") +
-  scale_x_log10(breaks = c(1,10,100,1000,10000)) +
-  scale_y_log10(breaks = c(1,0.1,0.01,0.001,0.0001)) +
-  xlab("Frequency") + ylab("Cumulative Distribution Function") +
-  ggtitle("Power law fitted to word frequency")
-
+  scale_x_log10(breaks = c(1,10,1e2,1e3,1e4,1e5,1e6,1e7)) +
+  scale_y_log10(breaks = c(1,0.1,0.01,0.001,0.0001,0.00001)) +
+  xlab("Frequency") + ylab("Cumulative Distribution Function")
 ```
 
 And what text analysis would be complete without a word cloud, here of the top 1,000 most frequent words.
 ```{r wordcloud, fig.width=10}
-wordcloud(german$word, sqrt(german$count),
+for (i in unique(words$language)){
+wordcloud(words[language==i]$word, sqrt(words[language==i]$count),
           max.words = 1000,
           scale = c(2, 0.8),
           colors = brewer.pal(8, "Dark2"),
           random.order = FALSE,
           rot.per = 0,
           fixed.asp = FALSE)
+}
 ```
-
-You can view the full list with (not necessarily correct!) english translations [here](translated_list.csv).
 
 ```{r export}
-fwrite(german[count!=0][1:1000], "top_1000_german_words.csv")
+for(i in unique(words$language)){
+fwrite(words[count!=0 & language==i & rank < 1000][,-c("language"),with=FALSE], paste0("top_1000_",i,"_words.csv"))
+}
 ```
+
+### Caveats
+
+- Of course, even if you know 75% of all words that doesn't mean you will be able to understand 75% of sentences. However you may be able to glean some information from the context and I think these kind of lists could be a good place to kick start the learning process.
+- I have not checked the pre-processing steps (converting subtitle files to frequency lists) or performed any quality control. I can also not speak any of these languages apart from English and a small amount of German so it's hard for me to judge their quality!
